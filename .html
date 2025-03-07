@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de QR Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: auto;
+            border: 2px solid #000;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Escaneie o QR Code</h1>
+    <p>Apontando a câmera para um QR Code.</p>
+    <video id="videoElement" autoplay></video>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <script>
+        // Função para acessar a câmera e escanear o QR Code
+        async function startCamera() {
+            try {
+                // Acessa a câmera
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('videoElement');
+                video.srcObject = stream;
+
+                // Cria o canvas para desenhar os frames da câmera
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                // A cada frame do vídeo, tenta escanear o QR Code
+                video.addEventListener('play', function () {
+                    setInterval(() => {
+                        if (video.paused || video.ended) return;
+
+                        // Desenha o frame atual da câmera no canvas
+                        canvas.height = video.videoHeight;
+                        canvas.width = video.videoWidth;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        // Captura os dados da imagem no canvas
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                        
+                        // Tenta detectar o QR code na imagem
+                        const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
+
+                        if (qrCode) {
+                            // Se encontrar um QR code, abre o link em uma nova guia anônima
+                            window.open(qrCode.data, '_blank', 'noopener,noreferrer');
+                        }
+                    }, 100);  // Verifica a cada 100ms
+                });
+            } catch (err) {
+                alert('Erro ao acessar a câmera: ' + err.message);
+            }
+        }
+
+        // Iniciar a câmera quando a página carregar
+        startCamera();
+    </script>
+
+</body>
+</html>
